@@ -62,6 +62,35 @@ def readcar():
 def updatecar():
     return render_template('updatecar.html', appType=appType)
 
+@app.route('/updatecarform', methods=['GET','POST'])
+def updatecarform():
+    fName = request.form['carName']
+    # Cari data mobil berdasarkan nama
+    try:
+        car = TBCars.get(TBCars.carname == fName)
+        return render_template('updatecarform.html', car=car, appType=appType)
+    except TBCars.DoesNotExist:
+        return redirect(url_for('updatecar'))
+
+@app.route('/updatecarsave', methods=['GET','POST'])
+def updatecarsave():
+    fOldName = request.form['oldCarName']
+    fName = request.form['carName']
+    fBrand = request.form['carBrand']
+    fModel = request.form['carModel']
+    fPrice = request.form['carPrice']
+    
+    # Update data di database
+    query = TBCars.update(
+        carname=fName,
+        carbrand=fBrand,
+        carmodel=fModel,
+        carprice=fPrice
+    ).where(TBCars.carname == fOldName)
+    query.execute()
+    
+    return redirect(url_for('readcar'))
+
 @app.route('/deletecar')
 def deletecar():
     return render_template('deletecar.html', appType=appType)
@@ -77,6 +106,20 @@ def deletecarsave():
 def searchcar():
     return render_template('searchcar.html', appType=appType)
 
+@app.route('/searchcarresult', methods=['GET','POST'])
+def searchcarresult():
+    fSearchTerm = request.form['searchTerm']
+    
+    # Cari di semua field menggunakan OR
+    rows = TBCars.select().where(
+        (TBCars.carname.contains(fSearchTerm)) |
+        (TBCars.carbrand.contains(fSearchTerm)) |
+        (TBCars.carmodel.contains(fSearchTerm)) |
+        (TBCars.carprice.contains(fSearchTerm))
+    )
+    
+    return render_template('searchcarresult.html', rows=rows, searchTerm=fSearchTerm, appType=appType)
+
 @app.route('/help')
 def help():
     return "ini halaman Helps"
@@ -89,5 +132,3 @@ if __name__ == '__main__':
         host='0.0.0.0',
         debug = True
         )
-
-
